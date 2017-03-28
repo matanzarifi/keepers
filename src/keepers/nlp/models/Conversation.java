@@ -1,5 +1,7 @@
 package keepers.nlp.models;
 
+import java.beans.Transient;
+import java.sql.Date;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -15,6 +17,7 @@ public class Conversation {
 	private String birthDate;
 	private Long timeOfConversation;
 	private Location lastKnownLocation;
+	private List<String> languages;
 	private List<Message> messages;
 	
 	
@@ -23,7 +26,7 @@ public class Conversation {
 	}
 	
 	public Conversation(Long conversationId, String deviceId, Long childId, Long parentId, String appName, 
-						String birthDate, Long timeOfConversation, Location lastKnownLocation, List<Message> messages) {
+			String birthDate, Long timeOfConversation, Location lastKnownLocation, List<Message> messages) {
 		super();
 		this.conversationId = conversationId;
 		this.deviceId = deviceId;
@@ -48,6 +51,7 @@ public class Conversation {
 		this.messages = conv.getMessages();
 	}
 
+	@Transient
 	public Long getConversationId() {
 		return conversationId;
 	}
@@ -118,5 +122,13 @@ public class Conversation {
 	
 	public void setTimeOfConversation(Long timeOfConversation) {
 		this.timeOfConversation = timeOfConversation;
+	}
+
+	public List<String> getLanguages() {
+		return languages;
+	}
+
+	public void setLanguages(List<String> languages) {
+		this.languages = languages;
 	}	
 }

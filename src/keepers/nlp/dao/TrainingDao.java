@@ -1,33 +1,33 @@
 package keepers.nlp.dao;
 
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
-
 import keepers.nlp.models.Conversation;
+import keepers.nlp.models.ConversationAnalysisResult;
 import keepers.nlp.models.Message;
+import keepers.nlp.models.MessageAnalysisResult;
 
 public class TrainingDao {
 
 	// DB connection details
-	private static final String URL = "jdbc:postgresql://qdjjtnkv.db.elephantsql.com:5432/jwcpjbje";
-	private static final String USER_NAME = "jwcpjbje";
-	private static final String PASSWORD = "uDZ9aOC5VXlDF6lVr2EU7WCpVV4oUibB";
+	private static final String URL = "jdbc:db2://dashdb-txn-small-yp-lon02-71.services.eu-gb.bluemix.net:50000/BLUDB:user=bluadmin;password=NThhNTU0OTU5NjNj";
 	
 	// Queries
 	private static final String QRY_INSERT_CONVERSTION = "INSERT INTO conversation " + 
-			" (device_id,child_id,parent_id,time_of_conversation,platform,birth_date,location_latitude,location_longitude) " + 
-			" VALUES(?,?,?,?,?,?,?,?) RETURNING conversation_id";
-	private static final String QRY_INSERT_MESSAGES = "INSERT INTO message (conversation_id,message,is_outgoing) VALUES(?,?,?)";
-	private static final String QRY_GET_ALL_CONVERSATIONS = "SELECT * FROM conversation";
-	private static final String QRY_GET_MESSAGES_BY_CONV_ID = "SELECT * FROM message where conversation_id = ?";
+			" (device_id,child_id,parent_id,time_of_conversation,platform,birth_date,loc_latitude,loc_longitude) " + 
+			" VALUES(?,?,?,?,?,?,?,?)";
+	private static final String QRY_INSERT_MESSAGE = "INSERT INTO message (conversation_id,message,outgoing,severity) VALUES(?,?,?,?)";
+	private static final String QRY_INSERT_DICT_ENTRY = "INSERT INTO $tableName " + 
+			" (phrase,six_to_eight,nine_to_eleven,twelve_to_forteen,fifteen_plus) " +
+			" VALUES(?,?,?,?,?)";
+	private static final String QRY_GET_DICTIONARY = "SELECT * FROM $tableName";
 	
-	
+	// DB connection object
 	private Connection dbConnection;
 	
 	public TrainingDao() {
 		try {
-            Class.forName("org.postgresql.Driver");
+			Class.forName("com.ibm.db2.jcc.DB2Driver");
         }
         catch (java.lang.ClassNotFoundException e) {
             System.out.println(e.getMessage());
@@ -36,17 +36,19 @@ public class TrainingDao {
 		this.dbConnection = getConnection();
 	}
 	
-	public boolean saveConversation(Conversation conv) {
+	public boolean saveConversation(ConversationAnalysisResult convResult) {
+		Long convId;
 		try {
-			PreparedStatement st = dbConnection.prepareStatement(QRY_INSERT_CONVERSTION);
-			setConversationParameters(st, conv);
-			Long convId;
-			if (st.execute()) {
-				ResultSet rs = st.getResultSet();
-				rs.next();
+			PreparedStatement st = dbConnection.prepareStatement(QRY_INSERT_CONVERSTION, Statement.RETURN_GENERATED_KEYS);
+			setConversationParameters(st, convResult);
+			st.executeUpdate();
+			
+			ResultSet rs = st.getGeneratedKeys();
+			if (rs.next()) {
 				convId = rs.getLong(1);
-				saveMessages(conv.getMessages(), convId);
+				saveMessages(convResult.getAnalyzedMessages(), convId);
 			}
+			
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return false;
@@ -54,13 +56,14 @@ public class TrainingDao {
 		return true;
 	}
 	
-	private boolean saveMessages(List<Message> msgs, Long convId) {
+	private boolean saveMessages(List<MessageAnalysisResult> msgs, Long convId) {
 		try {
-			PreparedStatement st = dbConnection.prepareStatement(QRY_INSERT_MESSAGES);
-			for (Message msg : msgs) {
+			PreparedStatement st = dbConnection.prepareStatement(QRY_INSERT_MESSAGE);
+			for (MessageAnalysisResult msg : msgs) {
 				st.setLong(1, convId);
 				st.setString(2, msg.getMsg());
-				st.setBoolean(3, msg.isOutgoing());
+				st.setInt(3, msg.isOutgoing() ? 1 : 0);
+				st.setInt(4, msg.getMessageSeverity().ordinal());
 				st.addBatch();
 			}
 			st.executeBatch();
@@ -71,45 +74,56 @@ public class TrainingDao {
 		return true;
 	}
 	
-	public ResultSet getAllConversations() {
+	public boolean loadDictionaryToDB (String[] lines, String tableName, String delimiter) {
 		try {
-			Statement st = dbConnection.createStatement();
-			return st.executeQuery(QRY_GET_ALL_CONVERSATIONS);
+			PreparedStatement st = dbConnection.prepareStatement(QRY_INSERT_DICT_ENTRY.replace("$tableName", tableName));
+			for (String line: lines) {
+				String[] splitLine = line.split(delimiter);
+				st.setString(1, splitLine[0]);
+				st.setInt(2, Integer.valueOf(splitLine[1]));
+				st.setInt(3, Integer.valueOf(splitLine[2]));
+				st.setInt(4, Integer.valueOf(splitLine[3]));
+				st.setInt(5, Integer.valueOf(splitLine[4]));
+				st.addBatch();
+			}
+			st.executeBatch();
 		} catch (SQLException e) {
 			e.printStackTrace();
-			return null;
+			return false;
 		}
+		return true;
 	}
 	
-	public ResultSet getMessagesByConversationId(Long id) {
+	public ResultSet getDictionary(String tableName) {
+		ResultSet result = null;
 		try {
-			PreparedStatement st = dbConnection.prepareStatement(QRY_GET_MESSAGES_BY_CONV_ID);
-			st.setLong(1, id);
-			return st.executeQuery();
+			PreparedStatement st = dbConnection.prepareStatement(QRY_GET_DICTIONARY.replace("$tableName", tableName));
+			result =  st.executeQuery();
 		} catch (SQLException e) {
 			e.printStackTrace();
-			return null;
+			return result;
 		}
+		return result;
 	}
 	
-	private void setConversationParameters(PreparedStatement st, Conversation conv) {
+	private void setConversationParameters(PreparedStatement st, ConversationAnalysisResult convResult) {
 		try {
-			st.setString(1, conv.getDeviceId());
-			st.setLong(2, conv.getChildId());
-			st.setLong(3, conv.getParentId());
-			st.setLong(4, conv.getTimeOfConversation());
-			st.setString(5, conv.getAppName());
-			st.setString(6, conv.getBirthDate());
-			st.setDouble(7, (conv.getLastKnownLocation() != null) ? conv.getLastKnownLocation().getLatitude() : 0); 
-			st.setDouble(8, (conv.getLastKnownLocation() != null) ? conv.getLastKnownLocation().getLongitude() : 0);
+			st.setString(1, convResult.getDeviceId());
+			st.setLong(2, convResult.getChildId());
+			st.setLong(3, convResult.getParentId());
+			st.setLong(4, convResult.getTimeOfConversation());
+			st.setString(5, convResult.getAppName());
+			st.setString(6, convResult.getBirthDate());
+			st.setDouble(7, (convResult.getLastKnownLocation() != null) ? convResult.getLastKnownLocation().getLatitude() : 0); 
+			st.setDouble(8, (convResult.getLastKnownLocation() != null) ? convResult.getLastKnownLocation().getLongitude() : 0);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private Connection getConnection() {	
+	private Connection getConnection() {
 		try {
-			return DriverManager.getConnection(URL, USER_NAME, PASSWORD);
+			return DriverManager.getConnection(URL);
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return null;

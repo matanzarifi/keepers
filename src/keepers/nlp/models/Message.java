@@ -1,5 +1,7 @@
 package keepers.nlp.models;
 
+import java.beans.Transient;
+
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
@@ -20,6 +22,14 @@ public class Message {
 		this.isOutgoing = isOutgoing;
 	}
 	
+	public Message (Message msg) {
+		super();
+		this.conversationId = msg.conversationId;
+		this.msg = msg.getMsg();
+		this.timeOfMessage = msg.timeOfMessage;
+		this.isOutgoing = msg.isOutgoing;
+	}
+	
 	public String getMsg() {
 		return msg;
 	}
@@ -36,6 +46,7 @@ public class Message {
 		this.isOutgoing = isOutgoing;
 	}
 	
+	@Transient
 	public Long getConversationId() {
 		return conversationId;
 	}
