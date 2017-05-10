@@ -6,6 +6,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import keepers.nlp.managers.DictionaryManager;
 import keepers.nlp.managers.LanguageAnalysisManager;
 import keepers.nlp.models.Conversation;
 import keepers.nlp.models.ConversationAnalysisResult;
@@ -17,6 +18,7 @@ import keepers.nlp.models.ConversationAnalysisResult;
 public class ConversationREST {
 	
 	LanguageAnalysisManager languageAnalysisManager = LanguageAnalysisManager.getInstance();
+	DictionaryManager dictionaryManager = DictionaryManager.getInstance();
 	
 	public ConversationREST() {
 		
@@ -26,7 +28,11 @@ public class ConversationREST {
 	@Consumes({MediaType.APPLICATION_JSON}) 
 	@Produces({MediaType.APPLICATION_JSON})
 	public ConversationAnalysisResult submitConversation (Conversation conv) {
-		//languageAnalysisManager.loadDictionaryToDB("/Users/user/workspace/keepers-nlp/Dictionary_IT.csv", ",", "DICTIONARY_IT"); // for adding\editing dictionary to DB
+		// Load dictionary procedure
+		//dictionaryManager.loadDictionaryToDB("/Users/user/workspace/keepers-nlp/Dictionary_EN.csv", ",", "DICTIONARY_EN"); // for adding\editing dictionary to DB
+		//return null;
+		
+		// Standard Procedure
 		ConversationAnalysisResult result = languageAnalysisManager.analyzeConversation(conv);
 		languageAnalysisManager.saveConversation(result);
 		return result;

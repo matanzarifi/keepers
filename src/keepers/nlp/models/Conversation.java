@@ -1,7 +1,6 @@
 package keepers.nlp.models;
 
 import java.beans.Transient;
-import java.sql.Date;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -22,7 +21,6 @@ public class Conversation {
 	
 	
 	public Conversation () {
-		
 	}
 	
 	public Conversation(Long conversationId, String deviceId, Long childId, Long parentId, String appName, 

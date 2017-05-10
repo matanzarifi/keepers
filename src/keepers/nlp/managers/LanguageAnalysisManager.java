@@ -1,9 +1,5 @@
 package keepers.nlp.managers;
 
-
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -16,7 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import keepers.nlp.dao.TrainingDao;
+import keepers.nlp.dao.DictionaryDao;
+import keepers.nlp.dao.LanguageAnalysisDao;
 import keepers.nlp.models.AgeGroups;
 import keepers.nlp.models.Conversation;
 import keepers.nlp.models.ConversationAnalysisResult;
@@ -28,7 +25,6 @@ import keepers.nlp.models.MessageAnalysisResult;
 public class LanguageAnalysisManager {
 	
 	private static final DateFormat DATE_FORMATTER = new SimpleDateFormat("dd/MM/yyyy");
-
 	
 	private static final HashMap<DictionaryLanguages, HashMap<AgeGroups,HashMap<String, SeverityLevel>>> DICTIONARIES = 
 			new HashMap<DictionaryLanguages, HashMap<AgeGroups,HashMap<String, SeverityLevel>>>();
@@ -53,15 +49,15 @@ public class LanguageAnalysisManager {
 	}
 	
 	private static void loadDictionariesFromDB(List<DictionaryLanguages> languages) {
-		TrainingDao trainingDao = new TrainingDao();
+		DictionaryDao dictionaryDao = new DictionaryDao();
 		for (DictionaryLanguages language : languages) {
-			ResultSet resultSet = trainingDao.getDictionary(language.getTableName());
+			ResultSet resultSet = dictionaryDao.getDictionary(language.getTableName());
 			try {
 				while (resultSet.next()) {
-					DICTIONARIES.get(language).get(AgeGroups._6_TO_8).put(resultSet.getString(2), SeverityLevel.values()[Integer.valueOf(resultSet.getInt(3))]);
-					DICTIONARIES.get(language).get(AgeGroups._9_TO_11).put(resultSet.getString(2), SeverityLevel.values()[Integer.valueOf(resultSet.getInt(4))]);
-					DICTIONARIES.get(language).get(AgeGroups._12_TO_14).put(resultSet.getString(2), SeverityLevel.values()[Integer.valueOf(resultSet.getInt(5))]);
-					DICTIONARIES.get(language).get(AgeGroups._15_PLUS).put(resultSet.getString(2), SeverityLevel.values()[Integer.valueOf(resultSet.getInt(6))]);
+					DICTIONARIES.get(language).get(AgeGroups._6_TO_8).put(resultSet.getString(2).toLowerCase(), SeverityLevel.values()[Integer.valueOf(resultSet.getInt(3))]);
+					DICTIONARIES.get(language).get(AgeGroups._9_TO_11).put(resultSet.getString(2).toLowerCase(), SeverityLevel.values()[Integer.valueOf(resultSet.getInt(4))]);
+					DICTIONARIES.get(language).get(AgeGroups._12_TO_14).put(resultSet.getString(2).toLowerCase(), SeverityLevel.values()[Integer.valueOf(resultSet.getInt(5))]);
+					DICTIONARIES.get(language).get(AgeGroups._15_PLUS).put(resultSet.getString(2).toLowerCase(), SeverityLevel.values()[Integer.valueOf(resultSet.getInt(6))]);
 				}
 			} catch (SQLException e) {
 				e.printStackTrace();
@@ -86,10 +82,10 @@ public class LanguageAnalysisManager {
 	}
 	// -------------------------
 	
-	private TrainingDao trainingDao = new TrainingDao();
+	private LanguageAnalysisDao languageAnalysisDao = new LanguageAnalysisDao();
 	
 	public boolean saveConversation(ConversationAnalysisResult convResult) {
-		return trainingDao.saveConversation(convResult);
+		return languageAnalysisDao.saveConversation(convResult);
 	}
 	
 	public ConversationAnalysisResult analyzeConversation(Conversation conversation) {
@@ -103,22 +99,6 @@ public class LanguageAnalysisManager {
 		//next we determine the severity of the conversation
 		return getConversationAnalysisResult(conversation, relevantDictionaryByAge);
 		
-	}
-	
-	public boolean loadDictionaryToDB (String csvFile, String delimiter, String tableName) {
-		List<String> lines = new ArrayList<String>();
-		String line ="";
-		try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
-			while ((line = br.readLine()) != null) {
-				lines.add(line);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		String[] linesArray = new String[lines.size()];
-		linesArray = lines.toArray(linesArray);
-		return trainingDao.loadDictionaryToDB(linesArray, tableName, delimiter);
 	}
 	
 	private ConversationAnalysisResult getConversationAnalysisResult(Conversation conversation, 
