@@ -85,9 +85,25 @@ public class LanguageAnalysisManager {
 	private LanguageAnalysisDao languageAnalysisDao = new LanguageAnalysisDao();
 	
 	public boolean saveConversation(ConversationAnalysisResult convResult) {
-		return languageAnalysisDao.saveConversation(convResult);
+		//We are saving only conversations that contain offensive language
+		if (!convResult.getConversationSeverity().equals(SeverityLevel.GOOD)) {
+			return languageAnalysisDao.saveConversation(convResult);
+		}
+		else if (containsHarmfulMessages(convResult)) {
+			return languageAnalysisDao.saveConversation(convResult);
+		}
+		return false;
 	}
 	
+	private boolean containsHarmfulMessages(ConversationAnalysisResult convResult) {
+		for (MessageAnalysisResult msgResult : convResult.getAnalyzedMessages()) {
+			if (!msgResult.getMessageSeverity().equals(SeverityLevel.GOOD)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public ConversationAnalysisResult analyzeConversation(Conversation conversation) {
 		if (conversation == null || conversation.getMessages() == null) {
 			return null;
@@ -147,6 +163,7 @@ public class LanguageAnalysisManager {
 				}
 			}
 		}
+		
 		return result;
 	}
 	

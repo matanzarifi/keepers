@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public class BaseDao {
 	
 		// DB connection details
-		private static final String URL = "jdbc:db2://dashdb-txn-small-yp-lon02-71.services.eu-gb.bluemix.net:50000/BLUDB:user=bluadmin;password=NThhNTU0OTU5NjNj";
+		private static final String URL = "jdbc:db2://dashdb-txnha-small-yp-lon02-43.services.eu-gb.bluemix.net:50000/BLUDB:user=bluadmin;password=NWE3NjhjNjhjNTI4";
 
 		// DB connection object
 		protected Connection dbConnection;
