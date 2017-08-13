@@ -29,13 +29,6 @@ public class ConversationREST {
 	@Produces({MediaType.APPLICATION_JSON})
 	public ConversationAnalysisResult submitConversation (Conversation conv) {
 		
-		// Load dictionary procedure
-		//dictionaryManager.loadDictionaryToDB("/Users/user/workspace/keepers-nlp/Dictionary_EN.csv", ",", "DICTIONARY_EN");
-		//dictionaryManager.loadDictionaryToDB("/Users/user/workspace/keepers-nlp/Dictionary_HE.csv", ",", "DICTIONARY_HE");
-		//dictionaryManager.loadDictionaryToDB("/Users/user/workspace/keepers-nlp/Dictionary_FR.csv", ",", "DICTIONARY_FR");
-		//dictionaryManager.loadDictionaryToDB("/Users/user/workspace/keepers-nlp/Dictionary_IT.csv", ",", "DICTIONARY_IT");
-		//return null;
-		
 		// Standard Procedure
 		ConversationAnalysisResult result = languageAnalysisManager.analyzeConversation(conv);
 		languageAnalysisManager.saveConversation(result);

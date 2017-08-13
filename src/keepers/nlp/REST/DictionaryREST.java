@@ -19,7 +19,9 @@ public class DictionaryREST {
 	@POST
 	@Consumes({MediaType.APPLICATION_JSON}) 
 	@Produces({MediaType.APPLICATION_JSON})
-	public String updateDictionary (DictionaryLanguages language) {
+	public String updateDictionary () {
+		// Load dictionary procedure
+		dictionaryManager.loadDictionaryToDB("/Users/user/workspace/keepers-nlp/Dictionary_DE.csv", ",", "DICTIONARY_DE");
 		return null;
 	}
 }

@@ -1,7 +1,11 @@
 package keepers.nlp.models;
 
 public enum DictionaryLanguages {
-	HEBREW("he","DICTIONARY_HE"), ENGLISH("en","DICTIONARY_EN"), FRENCH("fr","DICTIONARY_FR"), ITALIAN("it","DICTIONARY_IT");
+	HEBREW("he","DICTIONARY_HE"),
+	ENGLISH("en","DICTIONARY_EN"),
+	FRENCH("fr","DICTIONARY_FR"),
+	ITALIAN("it","DICTIONARY_IT"),
+	GERMAN("de","DICTIONARY_DE");
 	
 	private String languageCode;
 	private String tableName;
